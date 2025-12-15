@@ -1,0 +1,53 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+from statsmodels.tsa.stattools import adfuller
+
+# 1. Часовий ряд (тут приклад – дохід компанії за роками, підстав свій варіант)
+y = np.array([25, 30, 35, 40, 48, 55, 63, 70, 82, 95, 110, 130, 150, 170])
+
+#  Крок 1. Перевірка стаціонарності (ADF-тест) 
+result = adfuller(y)
+print("ADF Statistic:", result[0])
+print("p-value:", result[1])
+if result[1] > 0.05:
+    print("Ряд НЕ стаціонарний")
+else:
+    print("Ряд стаціонарний")
+
+#  Крок 2. Приведення до стаціонарного вигляду 
+if result[1] > 0.05:
+    y_proc = np.diff(y)
+else:
+    y_proc = y
+a
+#  Крок 3. Побудова моделі ARIMA 
+# (тут ми задаємо p=1, d=1, q=1 як приклад – параметри підбираються через ACF/PACF)
+model = sm.tsa.ARIMA(y, order=(1,1,1))
+
+#  Крок 4. Оцінка параметрів 
+res = model.fit()
+print(res.summary())
+
+#  Крок 5. Перевірка адекватності 
+residuals = res.resid
+fig, ax = plt.subplots(1,2,figsize=(10,4))
+ax[0].plot(residuals)
+ax[0].set_title("Залишки моделі")
+sm.graphics.tsa.plot_acf(residuals, ax=ax[1])
+plt.show()
+
+#  Крок 6. Прогнозування на 10 періодів
+forecast = res.get_forecast(steps=10)
+mean_forecast = forecast.predicted_mean
+conf_int = forecast.conf_int()
+
+plt.figure(figsize=(8,5))
+plt.plot(y, label="Фактичні дані")
+plt.plot(range(len(y), len(y)+10), mean_forecast, 'r--', label="Прогноз")
+plt.fill_between(range(len(y), len(y)+10),
+                 conf_int.iloc[:,0],
+                 conf_int.iloc[:,1], color='pink', alpha=0.3)
+plt.legend()
+plt.title("Прогноз на 10 періодів уперед")
+plt.show()
